@@ -84,6 +84,22 @@ public class SecureSqsIntegrationTest {
     }
 
     @Test
+    public void testSQSMessageWithEmptyBody() throws InterruptedException {
+        GetQueueUrlResult queueUrl = sqsClient.getQueueUrl(QUEUE_NAME);
+        String emptyBody = "";
+
+        log.debug("Sending message with empty payload to queue={}", queueUrl);
+        sqsClient.sendMessage(queueUrl.getQueueUrl(), emptyBody);
+        Message message = sqsClient.receiveMessage(queueUrl.getQueueUrl()).getMessages().get(0);
+        String messageContent = message.getBody();
+
+        assertEquals(messageContent, emptyBody);
+
+        log.debug("Deleting test message from queue {}", queueUrl);
+        sqsClient.deleteMessage(queueUrl.getQueueUrl(), message.getReceiptHandle());
+    }
+
+    @Test
     public void testSQSMessageWithSNSNotification() throws InterruptedException {
         sqsClient.withSnsNotificationsEnabled(QUEUE_NAME, true);
         GetQueueUrlResult queueUrl = sqsClient.getQueueUrl(QUEUE_NAME);
