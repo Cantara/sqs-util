@@ -25,20 +25,25 @@ import java.util.Map;
  */
 public final class KMSCryptoUtil {
     public static final String DEFAULT_ALGORITHM = "AES/CBC/PKCS5Padding";
+
     public static final String DEFAULT_CMK = "alias/cantara/testcmk";
+
     public static final String DEFAULT_CONTENT_ENCODING = "gzip";
+
     public static final Region DEFAULT_REGION = Region.getRegion(Regions.EU_WEST_1);
+
     public static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
 
     private static final Map<Region, AWSKMSClient> REGION = new HashMap<Region, AWSKMSClient>();
 
-    public static byte[] decrypt (final Region region, final byte[] key, final byte[] iv, final byte[] payload) {
+    public static byte[] decrypt(final Region region, final byte[] key, final byte[] iv, final byte[] payload) {
         DecryptResult decryptResult = getAWSKMS(region).decrypt(new DecryptRequest().withCiphertextBlob(ByteBuffer.wrap(key)));
 
         try {
             Cipher cipher = Cipher.getInstance(DEFAULT_ALGORITHM);
             cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(decryptResult.getPlaintext().array(), "AES"), new IvParameterSpec(iv));
-            return Gzip.decompress(cipher.doFinal(payload));
+            byte[] decryptedBytes = Gzip.decompress(cipher.doFinal(payload));
+            return decryptedBytes != null ? decryptedBytes : new byte[0];
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
@@ -52,20 +57,19 @@ public final class KMSCryptoUtil {
         return new String (decrypt(region, Base64.decode(key), Base64.decode(iv), Base64.decode(payload)), DEFAULT_CHARSET);
     }
 
-    public static String decrypt (final Region region, final Map<Object, Object> map) {
+    public static String decrypt(final Region region, final Map<Object, Object> map) {
         return decrypt(region, map.get("key").toString(), map.get("iv").toString(), map.get("cipher").toString());
     }
 
-    public static String decrypt (final Region region, String payload) {
-        Map<Object, Object> map = JsonUtil.toMap(payload);
-        return decrypt(region, map);
+    public static String decrypt(final Region region, String payload) {
+        return decrypt(region, JsonUtil.toMap(payload));
     }
 
-    public static String decrypt (String payload) {
+    public static String decrypt(String payload) {
         return decrypt(DEFAULT_REGION, payload);
     }
 
-    public static String encrypt (final String key, final byte[] plaintext, final byte[] ciphertext, final byte[] payload) {
+    public static String encrypt(final String key, final byte[] plaintext, final byte[] ciphertext, final byte[] payload) {
         Map<String, Object> map = new HashMap<String, Object>();
         map.put("algorithm", DEFAULT_ALGORITHM);
         map.put("encoding", DEFAULT_CONTENT_ENCODING);
@@ -87,7 +91,7 @@ public final class KMSCryptoUtil {
         }
     }
 
-    public static String encrypt (final GenerateDataKeyResult dataKeyResult, final String payload) {
+    public static String encrypt(final GenerateDataKeyResult dataKeyResult, final String payload) {
         try {
             return encrypt(dataKeyResult.getKeyId(), dataKeyResult.getPlaintext().array(), dataKeyResult.getCiphertextBlob().array(), payload.getBytes(
                     DEFAULT_CHARSET));
@@ -98,19 +102,19 @@ public final class KMSCryptoUtil {
         }
     }
 
-    public static String encrypt (final Region region, final String kmsCmkId, final String payload) {
+    public static String encrypt(final Region region, final String kmsCmkId, final String payload) {
         return encrypt(generateDataKey(region, kmsCmkId), payload);
     }
 
-    public static String encrypt (final Region region, final String payload) {
+    public static String encrypt(final Region region, final String payload) {
         return encrypt(region, DEFAULT_CMK, payload);
     }
 
-    public static String encrypt (final String payload) {
+    public static String encrypt(final String payload) {
         return encrypt(DEFAULT_REGION, payload);
     }
 
-    public static GenerateDataKeyResult generateDataKey (final Region region, final String kmsCmkId) {
+    public static GenerateDataKeyResult generateDataKey(final Region region, final String kmsCmkId) {
         return getAWSKMS(region).generateDataKey(new GenerateDataKeyRequest().withKeyId(kmsCmkId).withKeySpec(DataKeySpec.AES_256));
     }
 
