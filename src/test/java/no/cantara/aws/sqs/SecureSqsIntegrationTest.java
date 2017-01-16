@@ -43,12 +43,13 @@ public class SecureSqsIntegrationTest {
 
     private static final String QUEUE_NAME = "cantara-aws-util-sqs-unittest";
     private static final String S3_BUCKET = "jms.lab.cantara.no";
+    private static final Regions REGION = Regions.US_EAST_1;
     private static AmazonSQSSecureClient sqsClient;
     private static final Logger log = LoggerFactory.getLogger(SecureSqsIntegrationTest.class);
 
     @BeforeClass
     public static void createClientAndQueue() {
-        sqsClient = new AmazonSQSSecureClient(Region.getRegion(Regions.EU_WEST_1), DEFAULT_CMK, S3_BUCKET);
+        sqsClient = new AmazonSQSSecureClient(Region.getRegion(REGION), DEFAULT_CMK, S3_BUCKET);
         sqsClient.createQueue(new CreateQueueRequest(QUEUE_NAME)
                                       .addAttributesEntry("MessageRetentionPeriod", "60")          // Minimal time for retaining messages
                                       .addAttributesEntry("ReceiveMessageWaitTimeSeconds", "20")); // Use long-polling by default
@@ -142,7 +143,7 @@ public class SecureSqsIntegrationTest {
     @Test(expected = AmazonS3Exception.class)
     // The specified bucket does not exist
     public void testNonExistantBucket() {
-        AmazonSQSClient client = new AmazonSQSSecureClient(Region.getRegion(Regions.EU_WEST_1), DEFAULT_CMK, "non-existant-bucket");
+        AmazonSQSClient client = new AmazonSQSSecureClient(Region.getRegion(REGION), DEFAULT_CMK, "non-existant-bucket");
         client.createQueue(QUEUE_NAME);
         String queueUrl = client.getQueueUrl(QUEUE_NAME).getQueueUrl();
         String largeMessage = createDataSize(250000);
@@ -159,7 +160,7 @@ public class SecureSqsIntegrationTest {
         AWSCredentialsProvider credentialsProvider = createBasicCredentialsProvider(credentials.getAWSAccessKeyId(),
                                                                                     credentials.getAWSSecretKey());
         AmazonSQSClient client = new AmazonSQSSecureClient(credentialsProvider,
-                                                        Region.getRegion(Regions.EU_WEST_1), DEFAULT_CMK, S3_BUCKET);
+                                                        Region.getRegion(REGION), DEFAULT_CMK, S3_BUCKET);
         GetQueueUrlResult queueUrl = client.getQueueUrl(QUEUE_NAME);
         String largeMessage = createDataSize(250000);
 
@@ -179,13 +180,13 @@ public class SecureSqsIntegrationTest {
         AWSCredentialsProvider credentialsProvider = createBasicCredentialsProvider("invalid", "invalid");
         log.info("Creating SQS/S3 client and queue with invalid credentials");
         AmazonSQSClient client = new AmazonSQSSecureClient(credentialsProvider,
-                                                        Region.getRegion(Regions.EU_WEST_1), DEFAULT_CMK, S3_BUCKET);
+                                                        Region.getRegion(REGION), DEFAULT_CMK, S3_BUCKET);
         client.createQueue(QUEUE_NAME);
     }
 
     @Test(expected = NotFoundException.class)
     public void testInvalidCmk() {
-        KMSCryptoUtil.encrypt(Region.getRegion(Regions.EU_WEST_1), "invalid_id", "{}");
+        KMSCryptoUtil.encrypt(Region.getRegion(REGION), "invalid_id", "{}");
     }
 
     @Test
