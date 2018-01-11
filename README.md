@@ -1,4 +1,7 @@
 # sqs-util
+
+[![Known Vulnerabilities](https://snyk.io/test/github/Cantara/sqs-util/badge.svg)](https://snyk.io/test/github/Cantara/sqs-util)
+
 Utility lib for secure SQS
 
 ## Release notes
