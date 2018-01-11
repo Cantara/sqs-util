@@ -22,7 +22,7 @@
   </scm>
 
     <properties>
-        <aws.version>1.11.78</aws.version>
+        <aws.version>1.11.261</aws.version>
         <jdk.version>1.6</jdk.version>
     </properties>
 
