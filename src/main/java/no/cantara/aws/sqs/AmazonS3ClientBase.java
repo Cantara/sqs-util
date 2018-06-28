@@ -835,6 +835,11 @@ public class AmazonS3ClientBase implements AmazonS3 {
     }
 
     @Override
+    public SelectObjectContentResult selectObjectContent(SelectObjectContentRequest selectObjectContentRequest) throws SdkClientException {
+        return delegate.selectObjectContent(selectObjectContentRequest);
+    }
+
+    @Override
     public void shutdown() {
         delegate.shutdown();
     }
