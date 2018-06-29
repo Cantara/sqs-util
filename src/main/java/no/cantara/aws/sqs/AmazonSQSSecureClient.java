@@ -13,35 +13,23 @@ import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams;
 import com.amazonaws.services.sns.AmazonSNS;
 import com.amazonaws.services.sns.AmazonSNSClient;
 import com.amazonaws.services.sns.model.CreateTopicResult;
+import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClient;
-import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.MessageAttributeValue;
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
-import com.amazonaws.services.sqs.model.ReceiveMessageResult;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
-import com.amazonaws.services.sqs.model.SendMessageBatchResult;
-import com.amazonaws.services.sqs.model.SendMessageRequest;
-import com.amazonaws.services.sqs.model.SendMessageResult;
+import com.amazonaws.services.sqs.model.*;
 import com.amazonaws.util.IOUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 /**
- * Extends {@link com.amazonaws.services.sqs.AmazonSQSClient} with support for encryption, compression and
+ * Wraps {@link com.amazonaws.services.sqs.AmazonSQSClient} with support for encryption, compression and
  * arbitrary message size.
  * <p>
  * Please refer to the {@link no.cantara.aws.sqs package documentation} for more details and code examples.
  */
-public final class AmazonSQSSecureClient extends AmazonSQSClient {
+public class AmazonSQSSecureClient extends AmazonSQSClientBase {
     private static final String AWS_SQS_LARGE_PAYLOAD = "AWS_SQS_LARGE_PAYLOAD";
     private static final String REGION = "region";
     private static final String BUCKET = "bucket";
@@ -50,21 +38,34 @@ public final class AmazonSQSSecureClient extends AmazonSQSClient {
     private static final int MAX_MESSAGE_SIZE = (1024 * 64 * 4) - (1024 * 16);
 
     private final String AWS_KMS_CMK_ID;
-    private final Region AWS_REGION;
+    private final Regions AWS_REGION;
     final String AWS_S3_BUCKET;
     final AmazonS3 AWS_S3_CLIENT;
     private final AmazonSNS AWS_SNS_CLIENT;
     private final Set<String> queueNamesWithSnsNotification = new LinkedHashSet<String>();
 
-    private final class AmazonS3WithServerSideEncryption extends AmazonS3Client {
-        AmazonS3WithServerSideEncryption(final AWSCredentialsProvider awsCredentialsProvider, final Region awsRegion) {
-            super(awsCredentialsProvider);
-            super.withRegion(awsRegion);
+    private static final class AmazonS3WithServerSideEncryption extends AmazonS3ClientBase {
+        AmazonS3WithServerSideEncryption(final AmazonS3 delegate) {
+            super(delegate);
         }
 
-        AmazonS3WithServerSideEncryption(final Region awsRegion) {
-            super(new DefaultAWSCredentialsProviderChain());
-            super.withRegion(awsRegion);
+        static AmazonS3WithServerSideEncryption create(final AWSCredentialsProvider awsCredentialsProvider,
+                                                       final Regions awsRegion) {
+            final AmazonS3 amazonS3 = AmazonS3Client.builder()
+                    .withCredentials(awsCredentialsProvider)
+                    .withRegion(awsRegion)
+                    .build();
+
+            return new AmazonS3WithServerSideEncryption(amazonS3);
+        }
+
+        static AmazonS3WithServerSideEncryption create(final Regions awsRegion) {
+            final AmazonS3 amazonS3 = AmazonS3Client.builder()
+                    .withCredentials(new DefaultAWSCredentialsProviderChain())
+                    .withRegion(awsRegion)
+                    .build();
+
+            return new AmazonS3WithServerSideEncryption(amazonS3);
         }
 
         @Override
@@ -83,29 +84,49 @@ public final class AmazonSQSSecureClient extends AmazonSQSClient {
         }
     }
 
-    public AmazonSQSSecureClient(final AWSCredentialsProvider awsCredentialsProvider, final Region awsRegion, final String kmsCmkId, final String s3Bucket) {
-        super(awsCredentialsProvider);
-        super.setRegion(awsRegion);
+    private AmazonSQSSecureClient(final AmazonSQS delegate,
+                                  final Regions awsRegion,
+                                  final String kmsCmkId,
+                                  final String s3Bucket,
+                                  final AmazonS3 awsS3Client,
+                                  final AmazonSNS amazonSNS) {
+        super(delegate);
 
         this.AWS_KMS_CMK_ID = kmsCmkId;
         this.AWS_REGION = awsRegion;
         this.AWS_S3_BUCKET = s3Bucket;
-        this.AWS_S3_CLIENT = new AmazonS3WithServerSideEncryption(awsCredentialsProvider, awsRegion);
-        this.AWS_SNS_CLIENT = new AmazonSNSClient();
-        this.AWS_SNS_CLIENT.setRegion(awsRegion);
+        this.AWS_S3_CLIENT = awsS3Client;
+        this.AWS_SNS_CLIENT = amazonSNS;
     }
 
-    public AmazonSQSSecureClient(final Region awsRegion, final String kmsCmkId, final String s3Bucket) {
-        super(new DefaultAWSCredentialsProviderChain());
-        super.setRegion(awsRegion);
 
-        this.AWS_KMS_CMK_ID = kmsCmkId;
-        this.AWS_REGION = awsRegion;
-        this.AWS_S3_BUCKET = s3Bucket;
-        this.AWS_S3_CLIENT = new AmazonS3WithServerSideEncryption(awsRegion);
-        this.AWS_SNS_CLIENT = new AmazonSNSClient();
-        this.AWS_SNS_CLIENT.setRegion(awsRegion);
+    public static AmazonSQSSecureClient create(final AWSCredentialsProvider awsCredentialsProvider,
+                                               final Regions awsRegion,
+                                               final String kmsCmkId,
+                                               final String s3Bucket) {
+        final AmazonSQS amazonSQS = AmazonSQSClient.builder()
+                .withCredentials(awsCredentialsProvider)
+                .withRegion(awsRegion)
+                .build();
+        final AmazonS3WithServerSideEncryption amazonS3 = AmazonS3WithServerSideEncryption.create(awsCredentialsProvider, awsRegion);
+        final AmazonSNS amazonSNS = AmazonSNSClient.builder().withRegion(awsRegion).build();
+        return new AmazonSQSSecureClient(amazonSQS, awsRegion, kmsCmkId, s3Bucket, amazonS3, amazonSNS);
     }
+
+    public static AmazonSQSSecureClient create(final Regions awsRegion,
+                                               final String kmsCmkId,
+                                               final String s3Bucket) {
+        final AWSCredentialsProvider credentialsProvider = new DefaultAWSCredentialsProviderChain();
+        final AmazonSQS amazonSQS = AmazonSQSClient.builder()
+                .withCredentials(credentialsProvider)
+                .withRegion(awsRegion)
+                .build();
+
+        final AmazonS3WithServerSideEncryption amazonS3 = AmazonS3WithServerSideEncryption.create(awsRegion);
+        final AmazonSNS amazonSNS = AmazonSNSClient.builder().withRegion(awsRegion).build();
+        return new AmazonSQSSecureClient(amazonSQS, awsRegion, kmsCmkId, s3Bucket, amazonS3, amazonSNS);
+    }
+
 
     @Override
     public final ReceiveMessageResult receiveMessage(ReceiveMessageRequest receiveMessageRequest) {
@@ -188,7 +209,7 @@ public final class AmazonSQSSecureClient extends AmazonSQSClient {
     }
 
     private SendMessageRequest deflate(SendMessageRequest sendMessageRequest) {
-        String payload = KMSCryptoUtil.encrypt(AWS_REGION, AWS_KMS_CMK_ID, sendMessageRequest.getMessageBody());
+        String payload = KMSCryptoUtil.encrypt(Region.getRegion(AWS_REGION), AWS_KMS_CMK_ID, sendMessageRequest.getMessageBody());
         Map<Object, Object> map = new HashMap<Object, Object>();
 
         map.put(REGION, AWS_REGION.getName());
@@ -225,7 +246,7 @@ public final class AmazonSQSSecureClient extends AmazonSQSClient {
 
             cleanMessageAttributes(message);
         } else {
-            message.setBody(KMSCryptoUtil.decrypt(AWS_REGION, message.getBody()));
+            message.setBody(KMSCryptoUtil.decrypt(Region.getRegion(AWS_REGION), message.getBody()));
         }
     }
 
