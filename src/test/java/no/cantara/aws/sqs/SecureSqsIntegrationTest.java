@@ -1,21 +1,5 @@
 package no.cantara.aws.sqs;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
-
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSCredentialsProvider;
@@ -25,14 +9,24 @@ import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.kms.model.NotFoundException;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
-import com.amazonaws.services.sqs.AmazonSQSClient;
-import com.amazonaws.services.sqs.model.CreateQueueRequest;
-import com.amazonaws.services.sqs.model.GetQueueUrlResult;
-import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.QueueDoesNotExistException;
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
-import com.amazonaws.services.sqs.model.SendMessageRequest;
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.model.*;
 import com.amazonaws.util.IOUtils;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
 
 import static no.cantara.aws.sqs.KMSCryptoUtil.DEFAULT_CMK;
 import static org.junit.Assert.assertEquals;
@@ -49,7 +43,7 @@ public class SecureSqsIntegrationTest {
 
     @BeforeClass
     public static void createClientAndQueue() {
-        sqsClient = new AmazonSQSSecureClient(Region.getRegion(REGION), DEFAULT_CMK, S3_BUCKET);
+        sqsClient = AmazonSQSSecureClient.create(REGION, DEFAULT_CMK, S3_BUCKET);
         sqsClient.createQueue(new CreateQueueRequest(QUEUE_NAME)
                                       .addAttributesEntry("MessageRetentionPeriod", "60")          // Minimal time for retaining messages
                                       .addAttributesEntry("ReceiveMessageWaitTimeSeconds", "20")); // Use long-polling by default
@@ -69,7 +63,7 @@ public class SecureSqsIntegrationTest {
     }
 
     @Test
-    public void testSQSMessage() throws InterruptedException {
+    public void testSQSMessage() {
         GetQueueUrlResult queueUrl = sqsClient.getQueueUrl(QUEUE_NAME);
         String smallMessage = "{ title: test, body: some-test-data }";
 
@@ -85,7 +79,7 @@ public class SecureSqsIntegrationTest {
     }
 
     @Test
-    public void testSQSMessageWithEmptyBody() throws InterruptedException {
+    public void testSQSMessageWithEmptyBody() {
         GetQueueUrlResult queueUrl = sqsClient.getQueueUrl(QUEUE_NAME);
         String emptyBody = "";
 
@@ -101,7 +95,7 @@ public class SecureSqsIntegrationTest {
     }
 
     @Test
-    public void testSQSMessageWithSNSNotification() throws InterruptedException {
+    public void testSQSMessageWithSNSNotification() {
         sqsClient.withSnsNotificationsEnabled(QUEUE_NAME, true);
         GetQueueUrlResult queueUrl = sqsClient.getQueueUrl(QUEUE_NAME);
         String smallMessage = "{ title: test, body: some-test-data }";
@@ -118,7 +112,7 @@ public class SecureSqsIntegrationTest {
     }
 
     @Test
-    public void testSQSAndS3Message() throws InterruptedException {
+    public void testSQSAndS3Message() {
         GetQueueUrlResult queueUrl = sqsClient.getQueueUrl(QUEUE_NAME);
         String largeMessage = createDataSize(250000);
 
@@ -143,7 +137,7 @@ public class SecureSqsIntegrationTest {
     @Test(expected = AmazonS3Exception.class)
     // The specified bucket does not exist
     public void testNonExistantBucket() {
-        AmazonSQSClient client = new AmazonSQSSecureClient(Region.getRegion(REGION), DEFAULT_CMK, "non-existant-bucket");
+        AmazonSQS client = AmazonSQSSecureClient.create(REGION, DEFAULT_CMK, "non-existant-bucket");
         client.createQueue(QUEUE_NAME);
         String queueUrl = client.getQueueUrl(QUEUE_NAME).getQueueUrl();
         String largeMessage = createDataSize(250000);
@@ -159,8 +153,8 @@ public class SecureSqsIntegrationTest {
         AWSCredentials credentials = new DefaultAWSCredentialsProviderChain().getCredentials();
         AWSCredentialsProvider credentialsProvider = createBasicCredentialsProvider(credentials.getAWSAccessKeyId(),
                                                                                     credentials.getAWSSecretKey());
-        AmazonSQSClient client = new AmazonSQSSecureClient(credentialsProvider,
-                                                        Region.getRegion(REGION), DEFAULT_CMK, S3_BUCKET);
+        AmazonSQS client = AmazonSQSSecureClient.create(credentialsProvider,
+                                                        REGION, DEFAULT_CMK, S3_BUCKET);
         GetQueueUrlResult queueUrl = client.getQueueUrl(QUEUE_NAME);
         String largeMessage = createDataSize(250000);
 
@@ -179,8 +173,8 @@ public class SecureSqsIntegrationTest {
     public void testInvalidCredentials() {
         AWSCredentialsProvider credentialsProvider = createBasicCredentialsProvider("invalid", "invalid");
         log.info("Creating SQS/S3 client and queue with invalid credentials");
-        AmazonSQSClient client = new AmazonSQSSecureClient(credentialsProvider,
-                                                        Region.getRegion(REGION), DEFAULT_CMK, S3_BUCKET);
+        AmazonSQS client = AmazonSQSSecureClient.create(credentialsProvider,
+                                                        REGION, DEFAULT_CMK, S3_BUCKET);
         client.createQueue(QUEUE_NAME);
     }
 
@@ -190,7 +184,7 @@ public class SecureSqsIntegrationTest {
     }
 
     @Test
-    public void testFileTransfer() throws InterruptedException, IOException {
+    public void testFileTransfer() throws IOException {
         GetQueueUrlResult queueUrl = sqsClient.getQueueUrl(QUEUE_NAME);
 
         String fileContent = createDataSize(3000);

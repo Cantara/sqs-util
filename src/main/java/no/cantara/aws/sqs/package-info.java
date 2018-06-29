@@ -19,7 +19,7 @@
  * Strength Jurisdiction Policy</em> must be installed (available from Oracle).
  * <h2>Code example - Sending a message</h2>
  * <pre>
- *    AmazonSQSSecureClient sqsClient = new AmazonSQSSecureClient(...);
+ *    AmazonSQSSecureClient sqsClient = AmazonSQSSecureClient.create(...);
  *    String queueName = ...;
  *    String payload = ...;
  *
@@ -37,7 +37,7 @@
  * </pre>
  * <h2>Code example - Receiving messages</h2>
  * <pre>
- *    AmazonSQSSecureClient sqsClient = new AmazonSQSSecureClient(...);
+ *    AmazonSQSSecureClient sqsClient = AmazonSQSSecureClient.create(...);
  *    String queueName = ...;
  *
  *    String queueUrl = sqsClient.getQueueUrl(queueName).getQueueUrl();
@@ -63,7 +63,7 @@
  * <img src="doc-files/file-transfer.png" alt="">
  * <h2>Code example - Sending a file</h2>
  * <pre>
- *    AmazonSQSSecureClient sqsClient = new AmazonSQSSecureClient(...);
+ *    AmazonSQSSecureClient sqsClient = AmazonSQSSecureClient.create(...);
  *    File sourceFile = ...;
  *    String queueName = ...;
  *
@@ -86,7 +86,7 @@
  * </pre>
  * <h2>Code example - Receiving a file</h2>
  * <pre>
- *    AmazonSQSSecureClient sqsClient = new AmazonSQSSecureClient(...);
+ *    AmazonSQSSecureClient sqsClient = AmazonSQSSecureClient.create(...);
  *    String queueName = ...;
  *    String queueUrl = sqsClient.getQueueUrl(queueName).getQueueUrl();
  *
