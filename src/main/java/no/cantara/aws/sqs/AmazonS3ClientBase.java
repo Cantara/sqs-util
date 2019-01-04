@@ -43,6 +43,58 @@ public class AmazonS3ClientBase implements AmazonS3 {
     }
 
     @Override
+    public SetObjectRetentionResult setObjectRetention(SetObjectRetentionRequest var1) {
+        return delegate.setObjectRetention(var1);
+    }
+
+    ;
+
+    @Override
+    public GetObjectRetentionResult getObjectRetention(GetObjectRetentionRequest var1) {
+        return delegate.getObjectRetention(var1);
+    }
+
+    @Override
+    public SetObjectLockConfigurationResult setObjectLockConfiguration(SetObjectLockConfigurationRequest var1) {
+        return delegate.setObjectLockConfiguration(var1);
+    }
+
+    @Override
+    public GetObjectLockConfigurationResult getObjectLockConfiguration(GetObjectLockConfigurationRequest var1) {
+        return delegate.getObjectLockConfiguration(var1);
+    }
+
+    @Override
+    public SetObjectLegalHoldResult setObjectLegalHold(SetObjectLegalHoldRequest var1) {
+        return delegate.setObjectLegalHold(var1);
+    }
+
+    @Override
+    public GetObjectLegalHoldResult getObjectLegalHold(GetObjectLegalHoldRequest var1) {
+        return delegate.getObjectLegalHold(var1);
+    }
+
+    @Override
+    public GetBucketPolicyStatusResult getBucketPolicyStatus(GetBucketPolicyStatusRequest var1) {
+        return delegate.getBucketPolicyStatus(var1);
+    }
+
+    @Override
+    public DeletePublicAccessBlockResult deletePublicAccessBlock(DeletePublicAccessBlockRequest var1) {
+        return delegate.deletePublicAccessBlock(var1);
+    }
+
+    @Override
+    public SetPublicAccessBlockResult setPublicAccessBlock(SetPublicAccessBlockRequest var1) {
+        return delegate.setPublicAccessBlock(var1);
+    }
+
+    @Override
+    public GetPublicAccessBlockResult getPublicAccessBlock(GetPublicAccessBlockRequest var1) {
+        return delegate.getPublicAccessBlock(var1);
+    }
+
+    @Override
     @Deprecated
     public void changeObjectStorageClass(String s, String s1, StorageClass storageClass) throws SdkClientException {
         delegate.changeObjectStorageClass(s, s1, storageClass);
