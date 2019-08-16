@@ -4,6 +4,8 @@ Utility lib for secure SQS
 ![Build Status](https://jenkins.capra.tv/buildStatus/icon?job=Cantara-sqs-util) [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/#active) [![Known Vulnerabilities](https://snyk.io/test/github/Cantara/sqs-util/badge.svg)](https://snyk.io/test/github/Cantara/sqs-util)
 
 ## Release notes
+### 0.6
+- update dependencies
 ### 0.5
 - update aws-sdk dependencies 
 ### 0.4.1
