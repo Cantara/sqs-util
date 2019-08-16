@@ -55,6 +55,21 @@ public class AmazonS3ClientBase implements AmazonS3 {
     }
 
     @Override
+    public PresignedUrlDownloadResult download(PresignedUrlDownloadRequest presignedUrlDownloadRequest) {
+        return delegate.download(presignedUrlDownloadRequest);
+    }
+
+    @Override
+    public void download(PresignedUrlDownloadRequest presignedUrlDownloadRequest, File file) {
+        delegate.download(presignedUrlDownloadRequest, file);
+    }
+
+    @Override
+    public PresignedUrlUploadResult upload(PresignedUrlUploadRequest presignedUrlUploadRequest) {
+        return delegate.upload(presignedUrlUploadRequest);
+    }
+
+    @Override
     public SetObjectLockConfigurationResult setObjectLockConfiguration(SetObjectLockConfigurationRequest var1) {
         return delegate.setObjectLockConfiguration(var1);
     }
