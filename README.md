@@ -106,8 +106,8 @@ String queueName = ...;
 String queueUrl = sqsClient.getQueueUrl(queueName).getQueueUrl();
 SendMessageRequest request = new SendMessageRequest()
 .withQueueUrl(queueUrl);
-.addMessageAttributesEntry("SoriaMessageType",
-new MessageAttributeValue().withDataType("String").withStringValue("WorkOrderAttachment"));
+.addMessageAttributesEntry("SomeMessageType",
+new MessageAttributeValue().withDataType("String").withStringValue("orderAttachment"));
 
 FileTransferEvent sentEvent = new FileTransferEvent();
 sentEvent.setFilename("photo.jpeg");
@@ -115,8 +115,8 @@ sentEvent.setSize(sourceFile.length());
 sentEvent.setS3Object(UUID.randomUUID().toString());
 
 // Example user-defined properties.
-sentEvent.getAttributes().put("meterPointId", "123456");
-sentEvent.getAttributes().put("workOrderId", "789");
+sentEvent.getAttributes().put("pointId", "123456");
+sentEvent.getAttributes().put("orderId", "789");
 
 FileTransferUtil.sendFile(sqsClient, request, sentEvent, sourceFile);
 ```
@@ -132,8 +132,8 @@ String queueUrl = sqsClient.getQueueUrl(queueName).getQueueUrl();
 Message message = sqsClient.receiveMessage(queueUrl).getMessages().get(0);
 
 // Check message type and download file if appropriate.
-String messageType = message.getMessageAttributes().get("SoriaMessageType").getStringValue();
-if ("WorkOrderAttachment".equals(messageType)) {
+String messageType = message.getMessageAttributes().get("SomeMessageType").getStringValue();
+if ("orderAttachment".equals(messageType)) {
 File targetFile = File.createTempFile("target", ".tmp");
 FileTransferEvent receivedEvent = FileTransferUtil.receiveFile(sqsClient, message.getBody(), targetFile);
 }
