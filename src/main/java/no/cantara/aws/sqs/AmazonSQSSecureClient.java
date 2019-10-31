@@ -127,6 +127,15 @@ public class AmazonSQSSecureClient extends AmazonSQSClientBase {
         return new AmazonSQSSecureClient(amazonSQS, awsRegion, kmsCmkId, s3Bucket, amazonS3, amazonSNS);
     }
 
+    public static AmazonSQSSecureClient create(final AmazonSQS amazonSQS,
+                                               final Regions awsRegion,
+                                               final String kmsCmkId,
+                                               final String s3Bucket) {
+
+        final AmazonS3WithServerSideEncryption amazonS3 = AmazonS3WithServerSideEncryption.create(awsRegion);
+        final AmazonSNS amazonSNS = AmazonSNSClient.builder().withRegion(awsRegion).build();
+        return new AmazonSQSSecureClient(amazonSQS, awsRegion, kmsCmkId, s3Bucket, amazonS3, amazonSNS);
+    }
 
     @Override
     public final ReceiveMessageResult receiveMessage(ReceiveMessageRequest receiveMessageRequest) {
