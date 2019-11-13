@@ -5,7 +5,6 @@ import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.kms.model.NotFoundException;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
@@ -28,7 +27,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
-import static no.cantara.aws.sqs.KMSCryptoUtil.DEFAULT_CMK;
+import static no.cantara.aws.sqs.KmsCryptoClient.DEFAULT_CMK;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -180,7 +179,7 @@ public class SecureSqsIntegrationTest {
 
     @Test(expected = NotFoundException.class)
     public void testInvalidCmk() {
-        KMSCryptoUtil.encrypt(Region.getRegion(REGION), "invalid_id", "{}");
+        new KmsCryptoClient().encrypt("invalid_id", "{}");
     }
 
     @Test
