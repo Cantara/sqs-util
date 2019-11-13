@@ -1,10 +1,9 @@
 package no.cantara.aws.sqs;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.kms.AWSKMS;
-import com.amazonaws.services.kms.AWSKMSClient;
+import com.amazonaws.services.kms.AWSKMSClientBuilder;
 import com.amazonaws.services.kms.model.DataKeySpec;
 import com.amazonaws.services.kms.model.DecryptRequest;
 import com.amazonaws.services.kms.model.DecryptResult;
@@ -23,21 +22,30 @@ import java.util.Map;
 /**
  * Encryption/decryption utilities based on Amazon KMS (Key Management Service).
  */
-public final class KMSCryptoUtil {
+public final class KmsCryptoClient {
+
+    private final AWSKMS AWS_KMS_CLIENT;
+
     public static final String DEFAULT_ALGORITHM = "AES/CBC/PKCS5Padding";
-
     public static final String DEFAULT_CMK = "alias/cantara/testcmk";
-
     public static final String DEFAULT_CONTENT_ENCODING = "gzip";
-
-    public static final Region DEFAULT_REGION = Region.getRegion(Regions.EU_WEST_1);
-
+    public static final Regions DEFAULT_REGION = Regions.EU_WEST_1;
     public static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
 
-    private static final Map<Region, AWSKMSClient> REGION = new HashMap<Region, AWSKMSClient>();
+    public KmsCryptoClient(AWSKMS awsKmsClient) {
+        this.AWS_KMS_CLIENT = awsKmsClient;
+    }
 
-    public static byte[] decrypt(final Region region, final byte[] key, final byte[] iv, final byte[] payload) {
-        DecryptResult decryptResult = getAWSKMS(region).decrypt(new DecryptRequest().withCiphertextBlob(ByteBuffer.wrap(key)));
+    public KmsCryptoClient() {
+        this.AWS_KMS_CLIENT =
+                AWSKMSClientBuilder.standard()
+                        .withRegion(DEFAULT_REGION)
+                        .withCredentials(new DefaultAWSCredentialsProviderChain())
+                        .build();
+    }
+
+    public byte[] decrypt(final byte[] key, final byte[] iv, final byte[] payload) {
+        DecryptResult decryptResult = AWS_KMS_CLIENT.decrypt(new DecryptRequest().withCiphertextBlob(ByteBuffer.wrap(key)));
 
         try {
             Cipher cipher = Cipher.getInstance(DEFAULT_ALGORITHM);
@@ -53,20 +61,16 @@ public final class KMSCryptoUtil {
         }
     }
 
-    public static String decrypt (final Region region, final String key, final String iv, final String payload) {
-        return new String (decrypt(region, Base64.decode(key), Base64.decode(iv), Base64.decode(payload)), DEFAULT_CHARSET);
+    public String decrypt(final String key, final String iv, final String payload) {
+        return new String(decrypt(Base64.decode(key), Base64.decode(iv), Base64.decode(payload)), DEFAULT_CHARSET);
     }
 
-    public static String decrypt(final Region region, final Map<Object, Object> map) {
-        return decrypt(region, map.get("key").toString(), map.get("iv").toString(), map.get("cipher").toString());
+    public String decrypt(final Map<Object, Object> map) {
+        return decrypt(map.get("key").toString(), map.get("iv").toString(), map.get("cipher").toString());
     }
 
-    public static String decrypt(final Region region, String payload) {
-        return decrypt(region, JsonUtil.toMap(payload));
-    }
-
-    public static String decrypt(String payload) {
-        return decrypt(DEFAULT_REGION, payload);
+    public String decrypt(String payload) {
+        return decrypt(JsonUtil.toMap(payload));
     }
 
     public static String encrypt(final String key, final byte[] plaintext, final byte[] ciphertext, final byte[] payload) {
@@ -102,28 +106,19 @@ public final class KMSCryptoUtil {
         }
     }
 
-    public static String encrypt(final Region region, final String kmsCmkId, final String payload) {
-        return encrypt(generateDataKey(region, kmsCmkId), payload);
+    public String encrypt(final String kmsCmkId, final String payload) {
+        return encrypt(generateDataKey(kmsCmkId), payload);
     }
 
-    public static String encrypt(final Region region, final String payload) {
-        return encrypt(region, DEFAULT_CMK, payload);
+    public String encrypt(final String payload) {
+        return encrypt(DEFAULT_CMK, payload);
     }
 
-    public static String encrypt(final String payload) {
-        return encrypt(DEFAULT_REGION, payload);
+    public GenerateDataKeyResult generateDataKey(final String kmsCmkId) {
+        GenerateDataKeyRequest generateDataKeyRequest = new GenerateDataKeyRequest()
+                .withKeyId(kmsCmkId)
+                .withKeySpec(DataKeySpec.AES_256);
+        return AWS_KMS_CLIENT.generateDataKey(generateDataKeyRequest);
     }
 
-    public static GenerateDataKeyResult generateDataKey(final Region region, final String kmsCmkId) {
-        return getAWSKMS(region).generateDataKey(new GenerateDataKeyRequest().withKeyId(kmsCmkId).withKeySpec(DataKeySpec.AES_256));
-    }
-
-    private static AWSKMS getAWSKMS(final Region region) {
-        if (!REGION.containsKey(region)) {
-            AWSKMSClient client = new AWSKMSClient(new DefaultAWSCredentialsProviderChain());
-            client.setRegion(region);
-            REGION.put(region, client);
-        }
-        return REGION.get(region);
-    }
 }

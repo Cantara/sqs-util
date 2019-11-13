@@ -47,8 +47,6 @@ public class AmazonS3ClientBase implements AmazonS3 {
         return delegate.setObjectRetention(var1);
     }
 
-    ;
-
     @Override
     public GetObjectRetentionResult getObjectRetention(GetObjectRetentionRequest var1) {
         return delegate.getObjectRetention(var1);
