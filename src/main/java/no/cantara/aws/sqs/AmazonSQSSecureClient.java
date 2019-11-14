@@ -74,15 +74,6 @@ public class AmazonSQSSecureClient extends AmazonSQSClientBase {
             return new AmazonS3WithServerSideEncryption(amazonS3);
         }
 
-        static AmazonS3WithServerSideEncryption create(final Regions awsRegion) {
-            final AmazonS3 amazonS3 = AmazonS3Client.builder()
-                    .withCredentials(new DefaultAWSCredentialsProviderChain())
-                    .withRegion(awsRegion)
-                    .build();
-
-            return new AmazonS3WithServerSideEncryption(amazonS3);
-        }
-
         @Override
         public final PutObjectResult putObject(PutObjectRequest putObjectRequest) {
             return super.putObject(putObjectRequest.withSSEAwsKeyManagementParams(new SSEAwsKeyManagementParams()));
@@ -121,49 +112,22 @@ public class AmazonSQSSecureClient extends AmazonSQSClientBase {
                                                final Regions awsRegion,
                                                final String kmsCmkId,
                                                final String s3Bucket) {
-        final AmazonSQS awsSqsClient = awsSqsClient(awsCredentialsProvider, awsRegion);
-        final AmazonS3WithServerSideEncryption awsS3Client = AmazonS3WithServerSideEncryption
-                .create(awsCredentialsProvider, awsRegion);
-        final AmazonSNS awsSnsClient = AmazonSNSClient.builder().withRegion(awsRegion).build();
-        final KmsCryptoClient awsKmsCryptoClient = kmsCryptoUtil(awsRegion);
-
-        return new AmazonSQSSecureClient(
-                awsSqsClient,
-                awsRegion,
-                kmsCmkId,
-                s3Bucket,
-                awsS3Client,
-                awsSnsClient,
-                awsKmsCryptoClient
-        );
+        return amazonSqsSecureClient(awsRegion, kmsCmkId, s3Bucket, awsCredentialsProvider);
     }
 
     public static AmazonSQSSecureClient create(final Regions awsRegion,
                                                final String kmsCmkId,
                                                final String s3Bucket) {
-        final AWSCredentialsProvider credentialsProvider = new DefaultAWSCredentialsProviderChain();
-        final AmazonSQS awsSqsClient = awsSqsClient(credentialsProvider, awsRegion);
-        final AmazonS3WithServerSideEncryption awsS3Client = AmazonS3WithServerSideEncryption.create(awsRegion);
-        final AmazonSNS awsSnsClient = AmazonSNSClient.builder().withRegion(awsRegion).build();
-        final KmsCryptoClient awsKmsCryptoClient = kmsCryptoUtil(awsRegion);
-
-        return new AmazonSQSSecureClient(
-                awsSqsClient,
-                awsRegion,
-                kmsCmkId,
-                s3Bucket,
-                awsS3Client,
-                awsSnsClient,
-                awsKmsCryptoClient
-        );
+        final AWSCredentialsProvider awsCredentialsProvider = new DefaultAWSCredentialsProviderChain();
+        return amazonSqsSecureClient(awsRegion, kmsCmkId, s3Bucket, awsCredentialsProvider);
     }
 
-    public static AmazonSQSSecureClient create(final AmazonSQS amazonSQS,
-                                               final Regions awsRegion,
+    public static AmazonSQSSecureClient create(final Regions awsRegion,
                                                final String kmsCmkId,
                                                final String s3Bucket,
                                                final AWSKMS awsKmsClient,
-                                               final AmazonS3 awsS3Client) {
+                                               final AmazonS3 awsS3Client,
+                                               final AmazonSQS amazonSQS) {
         final AmazonS3WithServerSideEncryption awsSqsClient = new AmazonS3WithServerSideEncryption(awsS3Client);
         final AmazonSNS awsSnsClient = AmazonSNSClient.builder().withRegion(awsRegion).build();
         final KmsCryptoClient awsKmsCryptoClient = new KmsCryptoClient(awsKmsClient);
@@ -179,17 +143,56 @@ public class AmazonSQSSecureClient extends AmazonSQSClientBase {
         );
     }
 
-    private static AmazonSQS awsSqsClient(AWSCredentialsProvider awsCredentialsProvider, Regions awsRegion) {
+    private static AmazonSQSSecureClient amazonSqsSecureClient(
+            final Regions awsRegion,
+            final String kmsCmkId,
+            final String s3Bucket,
+            final AWSCredentialsProvider awsCredentialsProvider
+    ) {
+        final AmazonSQS awsSqsClient = awsSqsClient(awsCredentialsProvider, awsRegion);
+        final AmazonS3WithServerSideEncryption awsS3Client = AmazonS3WithServerSideEncryption
+                .create(awsCredentialsProvider, awsRegion);
+        final AmazonSNS awsSnsClient = snsClient(awsCredentialsProvider, awsRegion);
+        final KmsCryptoClient awsKmsCryptoClient = kmsCryptoClient(awsCredentialsProvider, awsRegion);
+
+        return new AmazonSQSSecureClient(
+                awsSqsClient,
+                awsRegion,
+                kmsCmkId,
+                s3Bucket,
+                awsS3Client,
+                awsSnsClient,
+                awsKmsCryptoClient
+        );
+    }
+
+    private static AmazonSQS awsSqsClient(
+            final AWSCredentialsProvider awsCredentialsProvider,
+            final Regions awsRegion
+    ) {
         return AmazonSQSClient.builder()
                 .withCredentials(awsCredentialsProvider)
                 .withRegion(awsRegion)
                 .build();
     }
 
-    private static KmsCryptoClient kmsCryptoUtil(Regions awsRegion) {
+    private static AmazonSNS snsClient(
+            final AWSCredentialsProvider awsCredentialsProvider,
+            final Regions awsRegion
+    ) {
+        return AmazonSNSClient.builder()
+                .withCredentials(awsCredentialsProvider)
+                .withRegion(awsRegion)
+                .build();
+    }
+
+    private static KmsCryptoClient kmsCryptoClient(
+            final AWSCredentialsProvider awsCredentialsProvider,
+            final Regions awsRegion
+    ) {
         final AWSKMS awsKmsClient = AWSKMSClientBuilder.standard()
                 .withRegion(awsRegion.toString())
-                .withCredentials(new DefaultAWSCredentialsProviderChain())
+                .withCredentials(awsCredentialsProvider)
                 .build();
         return new KmsCryptoClient(awsKmsClient);
     }
