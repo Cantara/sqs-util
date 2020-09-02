@@ -235,9 +235,9 @@ public class AmazonSQSSecureClient extends AmazonSQSClientBase {
         String queueUrl = sendMessageBatchRequest.getQueueUrl();
         String queueName = queueUrl.substring(queueUrl.lastIndexOf('/') + 1);
         if(queueNamesWithSnsNotification.contains(queueName)) {
+            CreateTopicResult topic = AWS_SNS_CLIENT.createTopic(queueName);
+            String topicArn = topic.getTopicArn();
             for (SendMessageBatchResultEntry entry : result.getSuccessful()) {
-                CreateTopicResult topic = AWS_SNS_CLIENT.createTopic(queueName);
-                String topicArn = topic.getTopicArn();
                 AWS_SNS_CLIENT.publish(topicArn, entry.getMessageId());
             }
         }
