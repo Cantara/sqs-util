@@ -191,7 +191,7 @@ public class AmazonSQSSecureClient extends AmazonSQSClientBase {
             final Regions awsRegion
     ) {
         final AWSKMS awsKmsClient = AWSKMSClientBuilder.standard()
-                .withRegion(awsRegion.toString())
+                .withRegion(awsRegion)
                 .withCredentials(awsCredentialsProvider)
                 .build();
         return new KmsCryptoClient(awsKmsClient);
