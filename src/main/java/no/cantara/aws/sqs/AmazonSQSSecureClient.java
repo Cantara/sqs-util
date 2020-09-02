@@ -16,15 +16,7 @@ import com.amazonaws.services.sns.AmazonSNSClient;
 import com.amazonaws.services.sns.model.CreateTopicResult;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClient;
-import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.MessageAttributeValue;
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
-import com.amazonaws.services.sqs.model.ReceiveMessageResult;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
-import com.amazonaws.services.sqs.model.SendMessageBatchResult;
-import com.amazonaws.services.sqs.model.SendMessageRequest;
-import com.amazonaws.services.sqs.model.SendMessageResult;
+import com.amazonaws.services.sqs.model.*;
 import com.amazonaws.util.IOUtils;
 
 import java.io.ByteArrayInputStream;
@@ -238,7 +230,19 @@ public class AmazonSQSSecureClient extends AmazonSQSClientBase {
 
     @Override
     public final SendMessageBatchResult sendMessageBatch(SendMessageBatchRequest sendMessageBatchRequest) {
-        throw new NoSuchMethodError("TBI");
+        SendMessageBatchResult result = super.sendMessageBatch(sendMessageBatchRequest);
+
+        String queueUrl = sendMessageBatchRequest.getQueueUrl();
+        String queueName = queueUrl.substring(queueUrl.lastIndexOf('/') + 1);
+        if(queueNamesWithSnsNotification.contains(queueName)) {
+            for (SendMessageBatchResultEntry entry : result.getSuccessful()) {
+                CreateTopicResult topic = AWS_SNS_CLIENT.createTopic(queueName);
+                String topicArn = topic.getTopicArn();
+                AWS_SNS_CLIENT.publish(topicArn, entry.getMessageId());
+            }
+        }
+
+        return result;
     }
 
     @Override
