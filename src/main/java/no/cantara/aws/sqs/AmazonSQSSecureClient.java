@@ -230,7 +230,7 @@ public class AmazonSQSSecureClient extends AmazonSQSClientBase {
 
     @Override
     public final SendMessageBatchResult sendMessageBatch(SendMessageBatchRequest sendMessageBatchRequest) {
-        SendMessageBatchResult result = super.sendMessageBatch(sendMessageBatchRequest);
+        SendMessageBatchResult result = super.sendMessageBatch(deflate(sendMessageBatchRequest));
 
         String queueUrl = sendMessageBatchRequest.getQueueUrl();
         String queueName = queueUrl.substring(queueUrl.lastIndexOf('/') + 1);
@@ -311,6 +311,39 @@ public class AmazonSQSSecureClient extends AmazonSQSClientBase {
         }
 
         return sendMessageRequest;
+    }
+
+    private SendMessageBatchRequest deflate(SendMessageBatchRequest sendMessageBatchRequest) {
+           for(SendMessageBatchRequestEntry entry : sendMessageBatchRequest.getEntries()) {
+               String payload = AWS_KMS_CRYPTO_CLIENT.encrypt(AWS_KMS_CMK_ID, entry.getMessageBody());
+
+               if (payload.length() >= MAX_MESSAGE_SIZE) {
+                   String uuid = UUID.randomUUID().toString();
+
+                   Map<Object, Object> map = new HashMap<Object, Object>();
+                   map.put(REGION_KEY, AWS_REGION.getName());
+                   map.put(S3_BUCKET_KEY, AWS_S3_BUCKET);
+                   map.put(IDENTIFIER_KEY, uuid);
+
+                   MessageAttributeValue messageAttributeValue = new MessageAttributeValue()
+                           .withDataType("String")
+                           .withStringValue(JsonUtil.from(map));
+                   entry.addMessageAttributesEntry(LARGE_PAYLOAD_MESSAGE_ATTRIBUTE_KEY, messageAttributeValue);
+                   entry.setMessageBody("{}");
+
+                   write(AWS_S3_BUCKET, uuid, payload, sendMessageBatchRequest.getQueueUrl());
+               } else {
+                   Map<Object, Object> map = new HashMap<Object, Object>();
+                   map.put(REGION_KEY, AWS_REGION.getName());
+
+                   MessageAttributeValue messageAttributeValue = new MessageAttributeValue()
+                           .withDataType("String")
+                           .withStringValue(JsonUtil.from(map));
+                   entry.addMessageAttributesEntry(LARGE_PAYLOAD_MESSAGE_ATTRIBUTE_KEY, messageAttributeValue);
+                   entry.setMessageBody(payload);
+               }
+           }
+        return sendMessageBatchRequest;
     }
 
     private void inflate(Message message) {
