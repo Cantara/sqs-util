@@ -25,6 +25,7 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -287,25 +288,13 @@ public class AmazonSQSSecureClient extends AmazonSQSClientBase {
         if (payload.length() >= MAX_MESSAGE_SIZE) {
             String uuid = UUID.randomUUID().toString();
 
-            Map<Object, Object> map = new HashMap<Object, Object>();
-            map.put(REGION_KEY, AWS_REGION.getName());
-            map.put(S3_BUCKET_KEY, AWS_S3_BUCKET);
-            map.put(IDENTIFIER_KEY, uuid);
-
-            MessageAttributeValue messageAttributeValue = new MessageAttributeValue()
-                    .withDataType("String")
-                    .withStringValue(JsonUtil.from(map));
+            MessageAttributeValue messageAttributeValue = getLargePayloadMessageAttribute(uuid);
             sendMessageRequest.addMessageAttributesEntry(LARGE_PAYLOAD_MESSAGE_ATTRIBUTE_KEY, messageAttributeValue);
             sendMessageRequest.setMessageBody("{}");
 
             write(AWS_S3_BUCKET, uuid, payload, sendMessageRequest.getQueueUrl());
         } else {
-            Map<Object, Object> map = new HashMap<Object, Object>();
-            map.put(REGION_KEY, AWS_REGION.getName());
-
-            MessageAttributeValue messageAttributeValue = new MessageAttributeValue()
-                    .withDataType("String")
-                    .withStringValue(JsonUtil.from(map));
+            MessageAttributeValue messageAttributeValue = getNormalPayloadMessageAttribute();
             sendMessageRequest.addMessageAttributesEntry(LARGE_PAYLOAD_MESSAGE_ATTRIBUTE_KEY, messageAttributeValue);
             sendMessageRequest.setMessageBody(payload);
         }
@@ -314,36 +303,55 @@ public class AmazonSQSSecureClient extends AmazonSQSClientBase {
     }
 
     private SendMessageBatchRequest deflate(SendMessageBatchRequest sendMessageBatchRequest) {
-           for(SendMessageBatchRequestEntry entry : sendMessageBatchRequest.getEntries()) {
-               String payload = AWS_KMS_CRYPTO_CLIENT.encrypt(AWS_KMS_CMK_ID, entry.getMessageBody());
+        ArrayList<BatchEntry> entries = new ArrayList<BatchEntry>();
+        long payloadSize = 0;
+        for (SendMessageBatchRequestEntry entry : sendMessageBatchRequest.getEntries()) {
+            String payload = AWS_KMS_CRYPTO_CLIENT.encrypt(AWS_KMS_CMK_ID, entry.getMessageBody());
+            payloadSize += payload.length();
+            entries.add(new BatchEntry(payload, entry));
+        }
 
-               if (payload.length() >= MAX_MESSAGE_SIZE) {
-                   String uuid = UUID.randomUUID().toString();
+        boolean payloadRequiresS3 = payloadSize >= MAX_MESSAGE_SIZE;
 
-                   Map<Object, Object> map = new HashMap<Object, Object>();
-                   map.put(REGION_KEY, AWS_REGION.getName());
-                   map.put(S3_BUCKET_KEY, AWS_S3_BUCKET);
-                   map.put(IDENTIFIER_KEY, uuid);
+        for (BatchEntry batchEntry : entries) {
+            SendMessageBatchRequestEntry entry = batchEntry.getBatchRequestEntry();
+            String payload = batchEntry.getEncryptedPayload();
 
-                   MessageAttributeValue messageAttributeValue = new MessageAttributeValue()
-                           .withDataType("String")
-                           .withStringValue(JsonUtil.from(map));
-                   entry.addMessageAttributesEntry(LARGE_PAYLOAD_MESSAGE_ATTRIBUTE_KEY, messageAttributeValue);
-                   entry.setMessageBody("{}");
+            if (payloadRequiresS3) {
+                String uuid = UUID.randomUUID().toString();
 
-                   write(AWS_S3_BUCKET, uuid, payload, sendMessageBatchRequest.getQueueUrl());
-               } else {
-                   Map<Object, Object> map = new HashMap<Object, Object>();
-                   map.put(REGION_KEY, AWS_REGION.getName());
+                MessageAttributeValue messageAttributeValue = getLargePayloadMessageAttribute(uuid);
+                entry.addMessageAttributesEntry(LARGE_PAYLOAD_MESSAGE_ATTRIBUTE_KEY, messageAttributeValue);
+                entry.setMessageBody("{}");
 
-                   MessageAttributeValue messageAttributeValue = new MessageAttributeValue()
-                           .withDataType("String")
-                           .withStringValue(JsonUtil.from(map));
-                   entry.addMessageAttributesEntry(LARGE_PAYLOAD_MESSAGE_ATTRIBUTE_KEY, messageAttributeValue);
-                   entry.setMessageBody(payload);
-               }
-           }
+                write(AWS_S3_BUCKET, uuid, payload, sendMessageBatchRequest.getQueueUrl());
+            } else {
+                MessageAttributeValue messageAttributeValue = getNormalPayloadMessageAttribute();
+                entry.addMessageAttributesEntry(LARGE_PAYLOAD_MESSAGE_ATTRIBUTE_KEY, messageAttributeValue);
+                entry.setMessageBody(payload);
+            }
+        }
         return sendMessageBatchRequest;
+    }
+
+    private MessageAttributeValue getNormalPayloadMessageAttribute() {
+        Map<Object, Object> map = new HashMap<Object, Object>();
+        map.put(REGION_KEY, AWS_REGION.getName());
+
+        return new MessageAttributeValue()
+                .withDataType("String")
+                .withStringValue(JsonUtil.from(map));
+    }
+
+    private MessageAttributeValue getLargePayloadMessageAttribute(String uuid) {
+        Map<Object, Object> map = new HashMap<Object, Object>();
+        map.put(REGION_KEY, AWS_REGION.getName());
+        map.put(S3_BUCKET_KEY, AWS_S3_BUCKET);
+        map.put(IDENTIFIER_KEY, uuid);
+
+        return new MessageAttributeValue()
+                .withDataType("String")
+                .withStringValue(JsonUtil.from(map));
     }
 
     private void inflate(Message message) {
