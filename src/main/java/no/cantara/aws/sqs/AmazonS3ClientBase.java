@@ -38,6 +38,11 @@ public class AmazonS3ClientBase implements AmazonS3 {
     }
 
     @Override
+    public void setRequestPaymentConfiguration(SetRequestPaymentConfigurationRequest setRequestPaymentConfigurationRequest) {
+        delegate.setRequestPaymentConfiguration(setRequestPaymentConfigurationRequest);
+    }
+
+    @Override
     public void setS3ClientOptions(S3ClientOptions s3ClientOptions) {
         delegate.setS3ClientOptions(s3ClientOptions);
     }
