@@ -12,6 +12,7 @@ import com.amazonaws.services.s3.model.*;
 import com.amazonaws.services.s3.model.analytics.AnalyticsConfiguration;
 import com.amazonaws.services.s3.model.inventory.InventoryConfiguration;
 import com.amazonaws.services.s3.model.metrics.MetricsConfiguration;
+import com.amazonaws.services.s3.model.ownership.OwnershipControls;
 import com.amazonaws.services.s3.waiters.AmazonS3Waiters;
 
 import java.io.File;
@@ -807,6 +808,26 @@ public class AmazonS3ClientBase implements AmazonS3 {
     @Override
     public ListBucketMetricsConfigurationsResult listBucketMetricsConfigurations(ListBucketMetricsConfigurationsRequest listBucketMetricsConfigurationsRequest) throws SdkClientException {
         return delegate.listBucketMetricsConfigurations(listBucketMetricsConfigurationsRequest);
+    }
+
+    @Override
+    public DeleteBucketOwnershipControlsResult deleteBucketOwnershipControls(DeleteBucketOwnershipControlsRequest deleteBucketOwnershipControlsRequest) throws AmazonServiceException, SdkClientException {
+        return delegate.deleteBucketOwnershipControls(deleteBucketOwnershipControlsRequest);
+    }
+
+    @Override
+    public GetBucketOwnershipControlsResult getBucketOwnershipControls(GetBucketOwnershipControlsRequest getBucketOwnershipControlsRequest) throws AmazonServiceException, SdkClientException {
+        return delegate.getBucketOwnershipControls(getBucketOwnershipControlsRequest);
+    }
+
+    @Override
+    public SetBucketOwnershipControlsResult setBucketOwnershipControls(String s, OwnershipControls ownershipControls) throws AmazonServiceException, SdkClientException {
+        return delegate.setBucketOwnershipControls(s,ownershipControls);
+    }
+
+    @Override
+    public SetBucketOwnershipControlsResult setBucketOwnershipControls(SetBucketOwnershipControlsRequest setBucketOwnershipControlsRequest) throws AmazonServiceException, SdkClientException {
+        return delegate.setBucketOwnershipControls(setBucketOwnershipControlsRequest);
     }
 
     @Override
