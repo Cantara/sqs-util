@@ -158,6 +158,8 @@ Remember to create a subscription in the SNS Console. Select protocol "AWS Lambd
 
 
 ## Release notes
+### 0.7
+- update dependencies
 ### 0.6
 - update dependencies
 ### 0.5
