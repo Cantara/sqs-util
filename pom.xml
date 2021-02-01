@@ -48,6 +48,10 @@
                     <groupId>commons-codec</groupId>
                     <artifactId>commons-codec</artifactId>
                 </exclusion>
+                <exclusion>
+                   <groupId>com.fasterxml.jackson.core</groupId>
+                   <artifactId>jackson-cbor</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -62,6 +66,10 @@
                 <exclusion>
                     <groupId>commons-codec</groupId>
                     <artifactId>commons-codec</artifactId>
+                </exclusion>
+                <exclusion>
+                   <groupId>com.fasterxml.jackson.core</groupId>
+                   <artifactId>jackson-cbor</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
