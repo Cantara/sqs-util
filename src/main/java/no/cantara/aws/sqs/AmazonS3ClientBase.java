@@ -60,6 +60,11 @@ public class AmazonS3ClientBase implements AmazonS3 {
     }
 
     @Override
+    public WriteGetObjectResponseResult writeGetObjectResponse(WriteGetObjectResponseRequest writeGetObjectResponseRequest) {
+        return delegate.writeGetObjectResponse(writeGetObjectResponseRequest);
+    }
+
+    @Override
     public PresignedUrlDownloadResult download(PresignedUrlDownloadRequest presignedUrlDownloadRequest) {
         return delegate.download(presignedUrlDownloadRequest);
     }
