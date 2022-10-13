@@ -29,7 +29,6 @@
 
         <aws.version>1.12.319</aws.version>
         <slf4j.version>2.0.3</slf4j.version>
-        <jackson.version>2.13.4.1</jackson.version>
         <logback-classic.version>1.4.4</logback-classic.version>
         <junit.version>4.13.2</junit.version>
     </properties>
@@ -141,12 +140,12 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>${jackson.version}</version>
+            <version>2.13.4</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
-            <version>${jackson.version}</version>
+            <version>2.13.4</version>
         </dependency>
 
         <dependency>
