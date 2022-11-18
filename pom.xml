@@ -29,7 +29,7 @@
 
         <aws.version>1.12.345</aws.version>
         <slf4j.version>2.0.3</slf4j.version>
-        <logback-classic.version>1.4.4</logback-classic.version>
+        <logback-classic.version>1.4.5</logback-classic.version>
         <junit.version>4.13.2</junit.version>
     </properties>
 
