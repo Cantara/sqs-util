@@ -39,6 +39,11 @@ public class AmazonSQSClientBase implements AmazonSQS {
     }
 
     @Override
+    public CancelMessageMoveTaskResult cancelMessageMoveTask(CancelMessageMoveTaskRequest cancelMessageMoveTaskRequest) {
+        return delegate.cancelMessageMoveTask(cancelMessageMoveTaskRequest);
+    }
+
+    @Override
     public ChangeMessageVisibilityResult changeMessageVisibility(ChangeMessageVisibilityRequest changeMessageVisibilityRequest) {
         return delegate.changeMessageVisibility(changeMessageVisibilityRequest);
     }
@@ -124,6 +129,11 @@ public class AmazonSQSClientBase implements AmazonSQS {
     }
 
     @Override
+    public ListMessageMoveTasksResult listMessageMoveTasks(ListMessageMoveTasksRequest listMessageMoveTasksRequest) {
+        return delegate.listMessageMoveTasks(listMessageMoveTasksRequest);
+    }
+
+    @Override
     public ListQueueTagsResult listQueueTags(ListQueueTagsRequest listQueueTagsRequest) {
         return delegate.listQueueTags(listQueueTagsRequest);
     }
@@ -201,6 +211,11 @@ public class AmazonSQSClientBase implements AmazonSQS {
     @Override
     public SetQueueAttributesResult setQueueAttributes(String queueUrl, Map<String, String> attributes) {
         return delegate.setQueueAttributes(queueUrl, attributes);
+    }
+
+    @Override
+    public StartMessageMoveTaskResult startMessageMoveTask(StartMessageMoveTaskRequest startMessageMoveTaskRequest) {
+        return delegate.startMessageMoveTask(startMessageMoveTaskRequest);
     }
 
     @Override
