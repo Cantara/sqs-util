@@ -10,7 +10,7 @@
 
     <groupId>no.cantara.aws</groupId>
     <artifactId>sqs-util</artifactId>
-    <version>0.7.57</version>
+    <version>0.7.58-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>SQS util</name>
@@ -21,7 +21,7 @@
         <developerConnection>scm:git:ssh://git@github.com/cantara/sqs-util.git</developerConnection>
         <connection>scm:git:https://github.com/cantara/sqs-util.git</connection>
         <url>https://github.com/cantara/sqs-util</url>
-        <tag>sqs-util-0.7.57</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <properties>
