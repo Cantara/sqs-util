@@ -27,7 +27,7 @@
     <properties>
         <jdk.version>1.6</jdk.version>
 
-        <aws.version>1.12.665</aws.version>
+        <aws.version>1.12.666</aws.version>
         <slf4j.version>2.0.12</slf4j.version>
         <logback-classic.version>1.5.0</logback-classic.version>
         <junit.version>4.13.2</junit.version>
