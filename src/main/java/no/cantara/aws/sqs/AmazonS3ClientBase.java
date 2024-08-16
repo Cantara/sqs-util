@@ -233,6 +233,11 @@ public class AmazonS3ClientBase implements AmazonS3 {
     }
 
     @Override
+    public ListBucketsPaginatedResult listBuckets(ListBucketsPaginatedRequest listBucketsPaginatedRequest) throws SdkClientException, AmazonServiceException {
+        return delegate.listBuckets(listBucketsPaginatedRequest);
+    }
+
+    @Override
     public String getBucketLocation(String s) throws SdkClientException {
         return delegate.getBucketLocation(s);
     }
