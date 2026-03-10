@@ -1,0 +1,25 @@
+id: sqs-util
+name: SQS Util
+version: 8
+description: |
+  Utility library extending the standard Amazon SQS client. Adds transparent
+  message batching, dead-letter queue handling, message deduplication, and retry
+  logic for reliable SQS-based messaging in Cantara services.
+units:
+  - id: sqs-client
+    name: SQS Client
+    type: library
+    description: Extended AmazonSQSClient with batching, deduplication, and DLQ support built in.
+    path: src/main/java
+  - id: batching
+    name: Batching
+    type: component
+    description: Automatic message batching — accumulates sends and deletes for SQS batch API calls.
+  - id: dlq
+    name: Dead-Letter Queue
+    type: component
+    description: Dead-letter queue routing for messages that exceed maximum receive counts.
+  - id: retry
+    name: Retry
+    type: component
+    description: Exponential backoff and retry logic for transient SQS API failures.
