@@ -1,3 +1,17 @@
+kcp_version: "0.21"
+updated: "2026-06-20"
+language: en
+license: "Apache-2.0"
+indexing: private
+temporal:
+  valid_from: "2026-03-10"
+signing:
+  scheme: ed25519
+  scope: this-manifest
+  public_key: "MCowBQYDK2VwAyEAuipgusnqU9vjf3p2yPVLD/DmERT6tBbLOqEETdxAhMU="
+  signature: "https://raw.githubusercontent.com/Cantara/sqs-util/master/knowledge.yaml.sig"
+not_for: []
+
 id: sqs-util
 name: SQS Util
 version: 8
@@ -11,15 +25,27 @@ units:
     type: library
     description: Extended AmazonSQSClient with batching, deduplication, and DLQ support built in.
     path: src/main/java
+      content_hash:
+        algorithm: sha256
+        value: ""
   - id: batching
     name: Batching
     type: component
     description: Automatic message batching — accumulates sends and deletes for SQS batch API calls.
+      content_hash:
+        algorithm: sha256
+        value: ""
   - id: dlq
     name: Dead-Letter Queue
     type: component
     description: Dead-letter queue routing for messages that exceed maximum receive counts.
+      content_hash:
+        algorithm: sha256
+        value: ""
   - id: retry
     name: Retry
     type: component
     description: Exponential backoff and retry logic for transient SQS API failures.
+      content_hash:
+        algorithm: sha256
+        value: ""
